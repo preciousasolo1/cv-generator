@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CV & LinkedIn Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #0a0f1e; --navy-2: #0f1629; --navy-3: #141d35;
+    --gold: #c9a84c; --gold-light: #e8c97a; --gold-dim: rgba(201,168,76,0.15);
+    --text: #f0f2f8; --text-muted: #8a93b2; --text-dim: #555e7a;
+    --border: rgba(255,255,255,0.07); --border-gold: rgba(201,168,76,0.25);
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--navy); color: var(--text); min-height: 100vh; padding: 2rem 1rem; }
+  .wrap { max-width: 620px; margin: 0 auto; }
+  .header { text-align: center; margin-bottom: 2.5rem; }
+  .badge { display: inline-block; background: var(--gold-dim); border: 1px solid var(--border-gold); border-radius: 100px; padding: 4px 16px; font-size: 12px; color: var(--gold-light); margin-bottom: 12px; }
+  h1 { font-size: clamp(1.6rem,4vw,2.2rem); font-weight: 700; margin-bottom: 8px; }
+  .sub { color: var(--text-muted); font-size: 15px; }
+  .steps { display: flex; gap: 8px; justify-content: center; margin-bottom: 2rem; align-items: center; flex-wrap: wrap; }
+  .step-item { display: flex; align-items: center; gap: 8px; }
+  .step-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .step-num.active { background: var(--gold); color: var(--navy); }
+  .step-num.done { background: var(--gold); color: var(--navy); }
+  .step-num.inactive { background: rgba(255,255,255,0.07); color: var(--text-dim); }
+  .step-label { font-size: 13px; font-weight: 500; }
+  .step-div { width: 24px; height: 1px; background: rgba(255,255,255,0.1); }
+  .card { background: var(--navy-2); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; }
+  .card h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1.25rem; }
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1.25rem; }
+  label { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+  input, textarea, select {
+    width: 100%; padding: 10px 14px;
+    background: var(--navy); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 14px;
+    font-family: inherit; outline: none; transition: border-color 0.2s;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--border-gold); }
+  input::placeholder, textarea::placeholder { color: var(--text-dim); }
+  textarea { height: 90px; resize: vertical; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media(max-width:480px){ .row { grid-template-columns: 1fr; } }
+  .btn { width: 100%; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; border: none; font-family: inherit; transition: background 0.2s, transform 0.15s; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-gold { background: var(--gold); color: var(--navy); }
+  .btn-gold:hover { background: var(--gold-light); }
+  .btn-gold:disabled { background: #1e2740; color: var(--text-dim); cursor: not-allowed; transform: none; }
+  .btn-outline { background: transparent; border: 1px solid var(--border) !important; color: var(--text-muted); }
+  .btn-ghost { background: var(--gold-dim); border: 1px solid var(--border-gold) !important; color: var(--gold); }
+  .btn-row { display: flex; gap: 1rem; margin-top: 0.5rem; }
+  .result-block { background: var(--navy-3); border: 1px solid var(--border-gold); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; }
+  .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .result-label { font-size: 13px; font-weight: 600; color: var(--gold); }
+  .copy-btn { background: var(--gold-dim); border: 1px solid var(--border-gold); color: var(--gold); border-radius: 6px; padding: 4px 12px; font-size: 12px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+  .copy-btn.copied { background: rgba(42,111,58,0.3); border-color: rgba(42,111,58,0.5); color: #4caf50; }
+  .result-text { font-size: 14px; color: #c8d0e8; line-height: 1.7; white-space: pre-wrap; }
+  .footer-note { text-align: center; font-size: 12px; color: #333d56; margin-top: 1.5rem; }
+  #loading { display: none; text-align: center; padding: 2rem; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+  .pulse { animation: pulse 2s infinite; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="badge">✦ CV & LinkedIn Generator</div>
+    <h1>Land your next opportunity</h1>
+    <p class="sub">Fill in your details and get a professional CV statement + LinkedIn profile in seconds.</p>
+  </div>
+
+  <div class="steps" id="steps">
+    <div class="step-item">
+      <div class="step-num active" id="sn1">1</div>
+      <span class="step-label" style="color:var(--text)">Your Details</span>
+    </div>
+    <div class="step-div"></div>
+    <div class="step-item">
+      <div class="step-num inactive" id="sn2">2</div>
+      <span class="step-label" style="color:var(--text-dim)" id="sl2">Experience</span>
+    </div>
+    <div class="step-div"></div>
+    <div class="step-item">
+      <div class="step-num inactive" id="sn3">3</div>
+      <span class="step-label" style="color:var(--text-dim)" id="sl3">Generate</span>
+    </div>
+  </div>
+
+  <!-- Step 1 -->
+  <div class="card" id="step1">
+    <h2>About you</h2>
+    <div class="row">
+      <div class="field"><label>First name</label><input id="fname" placeholder="e.g. Temi" /></div>
+      <div class="field"><label>Last name</label><input id="lname" placeholder="e.g. Asolo" /></div>
+    </div>
+    <div class="field"><label>Current or target job title</label><input id="role" placeholder="e.g. Senior Finance Transformation Consultant" /></div>
+    <div class="field"><label>Industry</label><input id="industry" placeholder="e.g. Financial Services / Consulting / FinTech" /></div>
+    <div class="row">
+      <div class="field">
+        <label>Tone</label>
+        <select id="tone">
+          <option value="professional">Professional</option>
+          <option value="confident and bold">Confident & Bold</option>
+          <option value="conversational">Conversational</option>
+          <option value="executive">Executive</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Goal</label>
+        <select id="goal">
+          <option value="job search">Job Search</option>
+          <option value="freelancing">Freelancing</option>
+          <option value="thought leadership">Thought Leadership</option>
+          <option value="career pivot">Career Pivot</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-gold" onclick="goStep2()">Next →</button>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="card" id="step2" style="display:none">
+    <h2>Your experience</h2>
+    <div class="field">
+      <label>Background & experience (years, companies, roles)</label>
+      <textarea id="experience" placeholder="e.g. 5 years in finance transformation across Grant Thornton, TCS, and boutique consultancies. Specialise in BlackLine and Workiva implementations..."></textarea>
+    </div>
+    <div class="field">
+      <label>Key skills (comma separated)</label>
+      <input id="skills" placeholder="e.g. BlackLine, Workiva, AI governance, process improvement, stakeholder management" />
+    </div>
+    <div class="field">
+      <label>1–3 notable achievements</label>
+      <textarea id="achievements" placeholder="e.g. Led £2M BlackLine implementation reducing month-end close by 40%. Developed AI governance framework adopted across 3 regulated firms."></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="goStep1()">← Back</button>
+      <button class="btn btn-gold" onclick="generate()" id="genBtn">✦ Generate →</button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading">
+    <div class="card" style="text-align:center;padding:3rem">
+      <div class="spinner"></div>
+      <p style="color:var(--text-muted);font-size:15px">Generating your content...</p>
+    </div>
+  </div>
+
+  <!-- Step 3 Results -->
+  <div class="card" id="step3" style="display:none">
+    <h2>Your content is ready ✦</h2>
+    <div id="results"></div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="goStep2()" style="flex:1">← Edit & Regenerate</button>
+      <button class="btn btn-ghost" onclick="reset()" style="flex:1">Start Over</button>
+    </div>
+  </div>
+
+  <p class="footer-note">Powered by Claude · Built independently</p>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  function goStep1() {
+    $('step2').style.display = 'none';
+    $('step1').style.display = 'block';
+    $('step3').style.display = 'none';
+    updateSteps(1);
+  }
+
+  function goStep2() {
+    const fname = $('fname').value.trim();
+    const role = $('role').value.trim();
+    const industry = $('industry').value.trim();
+    if (!fname || !role || !industry) { alert('Please fill in name, job title, and industry.'); return; }
+    $('step1').style.display = 'none';
+    $('step2').style.display = 'block';
+    updateSteps(2);
+  }
+
+  function updateSteps(active) {
+    for (let i = 1; i <= 3; i++) {
+      const n = $(`sn${i}`);
+      if (i < active) { n.className = 'step-num done'; }
+      else if (i === active) { n.className = 'step-num active'; }
+      else { n.className = 'step-num inactive'; }
+    }
+  }
+
+  async function generate() {
+    const experience = $('experience').value.trim();
+    const skills = $('skills').value.trim();
+    if (!experience || !skills) { alert('Please fill in your experience and skills.'); return; }
+
+    $('step2').style.display = 'none';
+    $('loading').style.display = 'block';
+    updateSteps(3);
+
+    const name = $('fname').value.trim() + ' ' + $('lname').value.trim();
+    const role = $('role').value.trim();
+    const industry = $('industry').value.trim();
+    const achievements = $('achievements').value.trim();
+    const tone = $('tone').value;
+    const goal = $('goal').value;
+
+    const prompt = `You are an expert CV writer and LinkedIn profile coach. Based on the following information, generate three things:
+
+1. A powerful CV PERSONAL STATEMENT (3-4 sentences, punchy, achievement-focused)
+2. A LINKEDIN HEADLINE (under 220 characters, keyword-rich)
+3. A LINKEDIN ABOUT SECTION (300-400 words, first person, engaging, ends with a call to action)
+
+Person details:
+- Name: ${name}
+- Current/Target Role: ${role}
+- Industry: ${industry}
+- Years of experience & background: ${experience}
+- Key skills: ${skills}
+- Notable achievements: ${achievements}
+- Tone: ${tone}
+- Goal: ${goal}
+
+Format your response exactly like this:
+---CV PERSONAL STATEMENT---
+[personal statement here]
+
+---LINKEDIN HEADLINE---
+[headline here]
+
+---LINKEDIN ABOUT---
+[about section here]`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      const data = await res.json();
+      const text = data.content?.[0]?.text || '';
+
+      const ps = text.match(/---CV PERSONAL STATEMENT---([\s\S]*?)---LINKEDIN HEADLINE---/)?.[1]?.trim();
+      const hl = text.match(/---LINKEDIN HEADLINE---([\s\S]*?)---LINKEDIN ABOUT---/)?.[1]?.trim();
+      const ab = text.match(/---LINKEDIN ABOUT---([\s\S]*?)$/)?.[1]?.trim();
+
+      $('loading').style.display = 'none';
+      $('step3').style.display = 'block';
+
+      const results = [
+        { key: 'ps', icon: '📄', label: 'CV Personal Statement', text: ps },
+        { key: 'hl', icon: '🔖', label: 'LinkedIn Headline', text: hl },
+        { key: 'ab', icon: '💼', label: 'LinkedIn About Section', text: ab },
+      ];
+
+      $('results').innerHTML = results.map(r => `
+        <div class="result-block">
+          <div class="result-header">
+            <span class="result-label">${r.icon} ${r.label}</span>
+            <button class="copy-btn" id="copy-${r.key}" onclick="copyText('${r.key}')">Copy</button>
+          </div>
+          <p class="result-text" id="text-${r.key}">${r.text || 'Could not generate this section. Try again.'}</p>
+        </div>
+      `).join('');
+
+    } catch (e) {
+      $('loading').style.display = 'none';
+      $('step2').style.display = 'block';
+      alert('Something went wrong. Please try again.');
+    }
+  }
+
+  function copyText(key) {
+    const text = $(`text-${key}`).innerText;
+    navigator.clipboard.writeText(text);
+    const btn = $(`copy-${key}`);
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  }
+
+  function reset() {
+    $('fname').value = ''; $('lname').value = ''; $('role').value = '';
+    $('industry').value = ''; $('experience').value = '';
+    $('skills').value = ''; $('achievements').value = '';
+    $('step3').style.display = 'none';
+    $('step1').style.display = 'block';
+    updateSteps(1);
+  }
+</script>
+</body>
+</html>
